@@ -27,7 +27,6 @@ Escribe un script en Python que implemente un ejemplo de propagación en redes u
 - Haz un **fork** de este repositorio en tu cuenta de GitHub.
 - Trabaja en tu fork y sube tu script a la carpeta `scripts/`.
 - Tu script debe poder ejecutarse desde la línea de comandos (CLI), aceptando como mínimo el archivo de entrada y el archivo de salida como argumentos.
-- No modifiques los archivos de red ni el archivo de semillas.
 - Documenta tu código explicando los métodos, librerías y algoritmos utilizados.
 - Puedes generar un archivo de resultados en la carpeta `results/` si lo consideras útil.
 
