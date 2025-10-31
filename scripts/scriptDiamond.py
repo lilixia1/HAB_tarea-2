@@ -70,14 +70,6 @@ def hugo_to_entrez(genes_list, species, batch_size=1000, show_progress=True):
     entrez_list = [entrez_mapping.get(g, None) for g in genes_list]
     return entrez_list
 
-
-def lista_id(diccionario):
-    lista=[]
-    for x,y in diccionario.items():
-        lista.append(y)
-    return lista
-
-
 ## 2. Construir la red
 def construir_red(interactions, SEED_GENES):
     G = nx.Graph()
