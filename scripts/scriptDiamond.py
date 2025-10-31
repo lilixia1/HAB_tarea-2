@@ -5,50 +5,92 @@ Se proporcionan archivos de red formateada para ambos algoritmos, así como una 
 filtrada obtenida de STRING y un script de ejemplo para procesarla.
 '''
 
-fichero = "data/network_diamond.txt"
 genes_semilla = ['ENO1', 'PGK1', 'HK2']
 nodos_añadidos = 5
+especie = 'human'
 
 ## 0. Librerias
 import pandas as pd
 import os
 import requests
 from io import StringIO
+from mygene import MyGeneInfo
+from tqdm import tqdm
+import networkx as nx
 
 ## 1. Carga y preparacion de datos
 def cargar_datos(fichero):
     try:
         interactions = pd.read_csv(fichero, sep=",")
         interactions.columns = [
-            "protein1_hugo", "protein2_hugo"
+            "protein1_entrez", "protein2_entrez"
         ]
         return interactions
     except Exception as e:
         print("Ha habido un error al cargar los datos: ", e)
     
-def hugo_to_string_ids(genes, species=9606):
+from mygene import MyGeneInfo
+from tqdm import tqdm
+
+def hugo_to_entrez(genes_list, species, batch_size=1000, show_progress=True):
     """
-    Convierte una lista de nombres de genes HUGO a IDs de STRING (e.g. 9606.ENSP...).
-    Usa la API de STRING.
+    Convierte una lista de nombres de genes HUGO a sus IDs Entrez usando MyGene.info.
+
+    Args:
+        genes_list (list[str]): Lista de nombres de genes (por ejemplo ['ENO1', 'PGK1', 'HK2'])
+        species (str): Especie, por defecto 'human'
+        batch_size (int): Tamaño de lote para las consultas a la API
+        show_progress (bool): Si True, muestra barra de progreso (requiere tqdm)
+
+    Returns:
+        list[str]: Lista de IDs Entrez (None si algún gen no se encuentra)
     """
-    url = "https://string-db.org/api/tsv/get_string_ids"
-    params = {
-        "identifiers": "%0d".join(genes),  # separador URL
-        "species": species,
-        "limit": 1,
-    }
+    mg = MyGeneInfo()
+    entrez_mapping = {}
 
-    response = requests.post(url, data=params)
-    if response.status_code != 200:
-        raise RuntimeError(f"Error en la solicitud a STRING: {response.status_code}")
+    iterator = range(0, len(genes_list), batch_size)
+    if show_progress:
+        iterator = tqdm(iterator, desc="Mapeando HUGO → Entrez")
 
-    df = pd.read_csv(StringIO(response.text), sep="\t")
-    mapping = dict(zip(df["queryItem"], df["stringId"]))
-    return mapping
+    for i in iterator:
+        batch = genes_list[i:i + batch_size]
+        results = mg.querymany(
+            batch,
+            scopes='symbol',
+            fields='entrezgene',
+            species=species
+        )
 
-## 2. Visualizar red
-def representar_red(grafo):
-    return imagen
+        for res in results:
+            gene = res.get('query')
+            entrez = res.get('entrezgene')
+            if entrez:
+                entrez_mapping[gene.upper()] = int(entrez)
+
+    entrez_list = [entrez_mapping.get(g, None) for g in genes_list]
+    return entrez_list
+
+
+def lista_id(diccionario):
+    lista=[]
+    for x,y in diccionario.items():
+        lista.append(y)
+    return lista
+
+
+## 2. Construir la red
+def construir_red(interactions, SEED_GENES):
+    G = nx.Graph()
+    for _, row in interactions.iterrows():
+        G.add_edge(row["protein1_entrez"], row["protein2_entrez"])
+
+    print("Verificando interacciones para los genes semilla...")
+    seed_interactions = interactions[interactions["protein1_entrez"].isin(SEED_GENES) | interactions["protein2_entrez"].isin(SEED_GENES)]
+    print(f"Interacciones encontradas para genes semilla: {seed_interactions.shape[0]}")
+
+    if seed_interactions.empty:
+        print("No se encontraron interacciones para los genes semilla.")
+    return G
 
 ## 3a. Propagacion red con DIAMOND
 
@@ -100,13 +142,17 @@ def main():
     DATA_DIR = os.path.join(BASE_DIR, "data", "network_diamond.txt")
     
     ##GENES SEMILLA A HUGO
-    mapping = hugo_to_string_ids(genes_semilla)
-    print(mapping)
+    genes_semilla_entrez = hugo_to_entrez(genes_semilla, especie)
+    print(genes_semilla_entrez)
     
-    grafo = cargar_datos(DATA_DIR)
+    interacciones = cargar_datos(DATA_DIR)
+    print(interacciones.head())
 
+    ##Construir grafo
+    red = construir_red(interacciones, genes_semilla_entrez)
+    return
     ##DIAMOND
-    #diamond_algorithm(grafo, genes_semilla, nodos_añadidos)
+    grafo_diamond = diamond_algorithm(red, genes_semilla_entrez, nodos_añadidos)
     
 
 main()
