@@ -28,7 +28,7 @@ tqdm
 │   └── genes\_seed.txt                           # Genes semilla: ENO1, PGK1, HK2
 ├── scripts/
 │   ├── process\_STRING.py                        # Script de ejemplo para procesar la red
-│   └── tu\_script.py                             # Script que debe entregar el estudiante
+│   └── tu\_propagacion_red.py                             # Script que debe entregar el estudiante
 ├── results/                                     # Carpeta para resultados generados
 ├── README.md                                    # Este archivo
 └── requirements.txt                             # Dependencias: networkx, pandas
@@ -50,7 +50,7 @@ python scripts/scriptDiamond.py --seed-file [RUTA_GENES] --input [RUTA_RED] [OPC
 ```
 **Ejemplo Práctico**
 ```{Bash}
-python scripts/scriptDiamond.py \
+python scripts/propagacion_red.py \
     --seed-file data/genes_seed.txt \
     --input data/string_network_filtered_hugo-400.tsv \
     --output propagacion_comparativa.tsv \
