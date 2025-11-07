@@ -1,0 +1,8 @@
+pandas
+numpy
+mygene
+requests
+networkx
+scipy
+matplotlib
+tqdm
